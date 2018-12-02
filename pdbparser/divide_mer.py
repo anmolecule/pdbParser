@@ -2,11 +2,10 @@
 import numpy as np
 import logging
 
-def divide_mer(ca,compnd,mer,missinginfo):
-    slice=len(compnd) / mer
+def divide_mer(ca,chlist,mer,missinginfo):
     nrba={}
-    for i in range(slice):
-        nrba[i]=compnd[i*mer:i*mer+mer]
+    for mol in range(1,len(chlist)+1):
+        nrba[i]=chlist[mol]
     batouse=[]
     for ba in nrba:
         bainfo=0

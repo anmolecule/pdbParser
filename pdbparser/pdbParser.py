@@ -11,7 +11,6 @@ def pdbHeader(pdb,pdbid,mer,compnd):
             return True
 
 def pdbParser(pdb,pdbid,mer,altloc,chlist):
-    print pdbid
     logging.info('Retriving CA coordinates')
     logging.info('Checking for missing residues')
     atomlines=readpdb.readatom(pdb)

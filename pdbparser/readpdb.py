@@ -23,15 +23,15 @@ def getpdb(pdbid):
         return pdblines
 
 def checkmulti(pdb):
+    count=0
     for line in pdb:
-        if 'NMR' in line:
-            logging.critical('Current version cannot handle multipdb files.')
-            logging.critical('Please upload your own structures.')
-            exit()
-        else:
-            pass
+        if line.startswith('MODEL'):
+            count+=1
+    if count > 1:
+        logging.critical('Current version cannot handle multipdb files.')
+        exit()
 
-def readcompnd(pdb):
+def findchains(pdb):
     compnd=None
     compndlist=[]
     molin=[]
@@ -67,14 +67,18 @@ def readcompnd(pdb):
                 compnd=[i.strip().strip(';') for i in line.split(':')[1].split(',')]
     return compnd
 
-def readremark(pdb,compnd):
+def readremark(pdb,chlist):
+    flatchlist=[]
+    for mol in chlist:
+        for ch in mol:
+            flatchlist.append(ch)
     remark=[]
     read=False
     for line in pdb:
         if 'REMARK 465' in line:
             remark.append(line)
     r465=np.genfromtxt(remark[7:-1],names=['REMARK','465','rname','ch','rid'],dtype=['S6',int,'S3','S1',int])
-    filt=r465[np.in1d(r465['ch'],compnd)]
+    filt=r465[np.in1d(r465['ch'],flatchlist)]
     return filt
 
 def readatom(pdb):
