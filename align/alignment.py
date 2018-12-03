@@ -7,7 +7,7 @@ from Bio.SeqUtils import seq1 as letter
 from Bio.Align.Applications import ClustalOmegaCommandline
 from Bio import AlignIO
 import numpy as np
-import logging,shutil
+import logging,os
 
 #tags: a aligned, s sequence, map residue name-nr map
 
@@ -199,10 +199,11 @@ def msa_clustal(infile,resmap,outfile,clustalopath,cwd,merinfo,query,totmer):
     for pdb in fullids:
         pdbid,mer=pdb.split('.')[0].split('_')
         amer=[]
+        merinfo[pdbid]
         for ch in merinfo[pdbid][1][int(mer)-1]:
             if pdb+'|'+ch+'|' in broken:
                 try:
-                    shutil.move(cwd+pdb+'_'+str(mer)+'.pdb',cwd+'broken_'+pdb+'_'+str(mer)+'.pdb')
+                    os.rename(cwd+pdb+'_'+str(mer)+'.pdb',cwd+'broken_'+pdb+'_'+str(mer)+'.pdb')
                 except (OSError, IOError):
                     continue
             else:

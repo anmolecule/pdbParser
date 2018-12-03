@@ -8,7 +8,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath('prepENS.py'))))
 from pdbparser.pdbParser import pdbParser, pdbTitle
 from pdbparser.writepdb import writeca
 from pdbparser.clean_pdb import getca
-from align.alignment import msa_clustal, getseq
+#from align.alignment import msa_clustal, getseq
+from align import alignment as a
+reload(a)
 
 class PDBInfo():
     def __init__(self,query,mer):
@@ -45,7 +47,7 @@ class PDBInfo():
                     continue
                 nchain=len(chains)
                 if nchain == self.mer:
-                    returninfo[pdb]=[count+1,chains]
+                    returninfo[pdb]=[count+1,[chains]]
                 elif nchain > self.mer:
                     if nchain % self.mer == 0:
                         newchains=[]
@@ -85,7 +87,7 @@ def downloadPDB(pdblist,mer,altloc,refseq,query,cwd):
             writeca(coord,cwd+'/'+pdb+'_'+str(mol+1)+'.pdb')
             for ch in pdblist[pdb][1][mol]:
                 ca=getca(coord,altloc,ch)
-                seq,map=getseq(ca)
+                seq,map=a.getseq(ca)
                 outseq.write('>'+pdb+'_'+str(mol+1)+'.pdb'+'|'+ch+'|'+'\n'+seq+'\n')
                 code,name,nr=zip(*map)
                 outresmap.write('>'+pdb+'_'+str(mol+1)+'.pdb'+'|'+ch+'|'+'\n'+'-'.join([str(i) for i in nr])+'\n')
@@ -96,12 +98,16 @@ def downloadPDB(pdblist,mer,altloc,refseq,query,cwd):
 def msa(seqfile,resmap,query,cwd,clustalopath,merinfo,totmer):
     outfile=cwd+'/'+query+'_msa.aln.fasta'
     seqfile=cwd+'/'+seqfile
-    complete,resids=msa_clustal(seqfile,resmap,outfile,clustalopath,cwd,merinfo,query,totmer)
+    complete,resids=a.msa_clustal(seqfile,resmap,outfile,clustalopath,cwd,merinfo,query,totmer)
     altloc='A'
     print complete
     for pdb in complete:
         chains=complete[pdb]
-        pdblines=open(pdb,'r').readlines()
+        try:
+            pdblines=open(pdb,'r').readlines()
+        except IOError:
+            print pdb+' skipped'
+            continue
         ca=pdbParser(pdblines,pdb,totmer,altloc,[chains])
         newca=None
         for ch in chains:
