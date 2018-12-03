@@ -5,6 +5,8 @@ from pdbparser.readpdb import getpdb
 from pdbparser.readpdb import checkmulti
 from pdbparser.writepdb import writeca
 from align.alignment import getaligned, multialigned
+import prepENS.prepENS
+
 import argparse
 import logging
 from os import getcwd
@@ -23,6 +25,8 @@ parser.add_argument('--dir', dest='cwd', help='The directory to save the output 
 parser.set_defaults(cwd=getcwd())
 parser.add_argument('--altloc', dest='altloc', help='Alternative location to be extracted, default is A')
 parser.set_defaults(altloc='A')
+parser.add_argument('--prepENS',metavar='Uniport ID',nargs=1 ,help='This argument accepts a Uniprot ID, and returns the PDB Files that are complete. PDB IDs with missing residues are written with the flat broken_ . When this argument is given, all the other arguments except for multimeric and altloc is ignored.')
+parser.set_defaults('prepENS'=None)
 
 args=parser.parse_args()
 try:
@@ -31,7 +35,12 @@ try:
 except TypeError:
     parser.print_help()
     exit()
-print args.cwd
+logging.info('Output directory is %s.\n\t If the input files are not given with full path, current working directory is used to search.' %args.cwd)
+
+#Below does the prepENS and then exits. So the rest of the commands are ignored.
+if prepENS is not None:
+    
+    exit()
 
 def chlistsplit(chlist):
     finlist=[]
@@ -48,12 +57,22 @@ def chlistsplit(chlist):
         else:
             logging.critical("Please supply the chain ids in these formats: A-E or A-C,E or A,B")
             exit()
-    return finlist
+    if args.mer == len(finlist):
+        return[finlist]
+    if args.mer > len(finlist):
+        if len(finlist) % args.mer == 0:
+            moldivision=[]
+            for i in xrange(0,len(finliist),args.mer):
+                moldivision.append(finlist[i:i+args.mer])
+            return moldivision
+        else:
+            logging.critical("Chain labels are not equal or multiple of total number of chains given.")
+            exit()
 
 schains=chlistsplit(args.schains)
 echains=chlistsplit(args.echains)
 
-toAlign=True
+#toAlign=True
 
 outf=args.cwd+'/error.dat'
 logging.basicConfig(level=logging.INFO,filename=outf)

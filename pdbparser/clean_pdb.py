@@ -11,10 +11,8 @@ def getch(coord,chlist):
     delch=coord[np.in1d(coord['ch'],flatchlist)]
     return delch
 
-def getca(coord,altloc='A',chlist):
+def getca(coord,altloc,chlist):
     subcoord=getch(coord,chlist)
     delalter=subcoord[(subcoord['altloc'] == altloc) | (subcoord['altloc'] == '')]
-    logging.warning('Cleaning alternative locations if present')
-    logging.warning('Default alternative location is A')
     ca=delalter[np.in1d(delalter['atname'],'CA')]
     return ca

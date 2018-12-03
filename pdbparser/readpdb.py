@@ -9,8 +9,9 @@ import logging
 def getpdb(pdbid):
     if len(pdbid) == 4:
         try:
-            url='http://files.rcsb.org/view/%s.pdb' %pdbid
-            return urllib2.urlopen(url).readlines()
+            urlib2.urlretrieve('http://files.rcsb.org/download/%s.pdb' %pdbid, pdbid+'.pdb')
+            pdblines=open(pdbid+'.pdb','r').readlines()
+            return pdblines
         except urllib2.HTTPError as err:
             if err.code == 404:
                 logging.critical('PDB code not found')

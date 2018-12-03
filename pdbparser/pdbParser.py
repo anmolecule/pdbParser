@@ -5,10 +5,16 @@ import readpdb, clean_pdb, divide_mer
 import missing, writepdb
 import logging
 
-def pdbHeader(pdb,pdbid,mer,compnd):
+def pdbTitle(pdb):
     for line in pdb:
-        if 'REMARK' in line:
-            return True
+        if 'TITLE' in line:
+            title=line.split()
+            break
+    for i in title:
+        if 'CHIMERA' in title or 'FUSED' in title:
+            return True 
+        else:
+            return False
 
 def pdbParser(pdb,pdbid,mer,altloc,chlist):
     logging.info('Retriving CA coordinates')
