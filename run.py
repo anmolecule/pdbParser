@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 
-from pdbparser.pdbParser import pdbParser
-from pdbparser.readpdb import getpdb
-from pdbparser.readpdb import checkmulti
-from pdbparser.writepdb import writeca
-from align.alignment import getaligned, multialigned
-import prepENS.prepENS
-
-import argparse
-import logging
+import argparse,logging
 from os import getcwd
+from pdbParser import pdbParser as pP
+from pdbParser import readpdb as rp
+from pdbParser import writepdb as wp
+#from pdbparser.pdbParser import pdbParser
+#from pdbparser.readpdb import getpdb
+#from pdbparser.readpdb import checkmulti
+#from pdbparser.writepdb import writeca
+from pdbParser import alignment as a
+from pdbParser import prepENS as pE
+#from align.alignment import getaligned, multialigned
+#import prepENS.prepENS
 
 parser = argparse.ArgumentParser(description='Identification of Missing residues')
 parser.add_argument('--start', metavar='PDB File', nargs=1 , help='Starting structure')
@@ -25,7 +28,7 @@ parser.add_argument('--dir', dest='cwd', help='The directory to save the output 
 parser.set_defaults(cwd=getcwd())
 parser.add_argument('--altloc', dest='altloc', help='Alternative location to be extracted, default is A')
 parser.set_defaults(altloc='A')
-parser.add_argument('--prepENS',metavar='Uniport ID',nargs=1 ,help='This argument accepts a Uniprot ID, and returns the PDB Files that are complete. PDB IDs with missing residues are written with the flat broken_ . When this argument is given, all the other arguments except for multimeric and altloc is ignored.')
+parser.add_argument('--prepENS',dest='query',metavar='Uniport ID',nargs=1 ,help='This argument accepts a Uniprot ID, and returns the PDB Files that are complete. PDB IDs with missing residues are written with the flat broken_ . When this argument is given, all the other arguments except for multimeric.')
 parser.set_defaults('prepENS'=None)
 
 args=parser.parse_args()
@@ -35,11 +38,16 @@ try:
 except TypeError:
     parser.print_help()
     exit()
+
 logging.info('Output directory is %s.\n\t If the input files are not given with full path, current working directory is used to search.' %args.cwd)
 
 #Below does the prepENS and then exits. So the rest of the commands are ignored.
-if prepENS is not None:
-    
+if args.query is not None:
+    info=pE.PDBInfo(args.query,args.mer)
+    pE.downloadPDB(info,args.cwd)
+    clustal=args.clustal
+    pE.msa(info,cwd,clustalopath)
+    pE.getcore(info)
     exit()
 
 def chlistsplit(chlist):
@@ -78,35 +86,35 @@ outf=args.cwd+'/error.dat'
 logging.basicConfig(level=logging.INFO,filename=outf)
 if args.mer == 1:
     for ch1,ch2 in zip(schains,echains):
-        start=getpdb(sid)
-        checkmulti(start)
+        start=rp.getpdb(sid)
+        rp.checkmulti(start)
         logging.info('Processing PDB files')
-        sca=pdbParser(start,sid,args.mer,args.altloc,ch1)
-        end=getpdb(eid)
-        checkmulti(end)
+        sca=pP.pdbParser(start,sid,args.mer,args.altloc,ch1)
+        end=rp.getpdb(eid)
+        rp.checkmulti(end)
         logging.info('Processing PDB files')
-        eca=pdbParser(end,eid,args.mer,args.altloc,ch2)
+        eca=pP.pdbParser(end,eid,args.mer,args.altloc,ch2)
         logging.info('Extracting the core region.')
-        score,ecore,correct=getaligned(sca,eca)
+        score,ecore,correct=a.getaligned(sca,eca)
         if correct is True:
-            writeca(score,args.cwd+'/start.pdb')
-            writeca(ecore,args.cwd+'/target.pdb')
+            wp.writeca(score,args.cwd+'/start.pdb')
+            wp.writeca(ecore,args.cwd+'/target.pdb')
             break
         else:
             continue
 
 elif args.mer !=1:
-    start=getpdb(sid)
-    checkmulti(start)
+    start=rp.getpdb(sid)
+    rp.checkmulti(start)
     logging.info('Processing PDB files')
-    sca=pdbParser(start,sid,args.mer,args.altloc,schains)
-    end=getpdb(eid)
-    checkmulti(end)
+    sca=pP.pdbParser(start,sid,args.mer,args.altloc,schains)
+    end=rp.getpdb(eid)
+    rp.checkmulti(end)
     logging.info('Processing PDB files')
-    eca=pdbParser(end,eid,args.mer,args.altloc,echains)
+    eca=pP.pdbParser(end,eid,args.mer,args.altloc,echains)
     logging.info('Extracting the core region.')
-    score,ecore,correct=multialigned(sca,eca,args.mer)
+    score,ecore,correct=a.multialigned(sca,eca,args.mer)
     if correct is True:
-        writeca(score,args.cwd+'/start.pdb')
-        writeca(ecore,args.cwd+'/target.pdb')
+        wp.writeca(score,args.cwd+'/start.pdb')
+        wp.writeca(ecore,args.cwd+'/target.pdb')
 
