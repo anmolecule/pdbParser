@@ -1,22 +1,22 @@
-
 import requests
 import logging
 import urllib
 import sys,os
 import numpy as np
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath('prepENS.py'))))
-from pdbparser.pdbParser import pdbParser, pdbTitle
-from pdbparser.writepdb import writeca
-from pdbparser.clean_pdb import getca
-#from align.alignment import msa_clustal, getseq
-from align import alignment as a
-reload(a)
+import pdbParser as pP
+import writepdb as wp
+import clean_pdb as cp
+import alignment as a
 
 class PDBInfo():
     def __init__(self,query,mer):
         self.query=query
         self.mer=mer
         self.result,self.refseq=self.get_pdbinfo()
+        self.broken=None
+        self.seqfilename=query+'_seq.txt'
+        self.residmapfilename=query+'_seq.txt'
+        self.alnfasta=query+'_init.aln.txt'
 
     def get_pdbinfo(self):
         URLbase = ('http://www.uniprot.org/uniprot/')
@@ -69,24 +69,29 @@ class PDBInfo():
         return(returninfo,refseq)
 
 
-def downloadPDB(pdblist,mer,altloc,refseq,query,cwd):
-    outseq=open(cwd+'/'+query+'_seq.txt','w')
-    outresmap=open(cwd+'/'+query+'_residmap.txt','w')
+def downloadPDB(info,cwd):
+    query=info.query
+    pdblist=info.result
+    mer=info.mer
+    refseq=info.refseq
+    altloc="A"
+    outseq=open(cwd+'/'+info.seqfilename,'w')
+    outresmap=open(cwd+'/'+info.seqfilename,'w')
     outseq.write('>refseq'+'\n'+refseq+'\n')
     for pdb in pdblist.keys():
         urllib.urlretrieve('http://files.rcsb.org/download/%s.pdb' %pdb, cwd+'/'+pdb+'.pdb')
         #time.sleep(-1)
         for mol in range(0,pdblist[pdb][0]):
             pdblines=open(cwd+'/'+pdb+'.pdb').readlines()
-            if pdbTitle(pdblines) is True:
+            if pP.pdbTitle(pdblines) is True:
                 pdblist.pop(pdb)
                 logging.critical('PDB ID %s is a chimera, skipping this file' %pdb)
                 continue
-            coord=pdbParser(pdblines,pdb,mer,altloc,[pdblist[pdb][1][mol]])
-            coord=getca(coord,altloc,[pdblist[pdb][1][mol]])
-            writeca(coord,cwd+'/'+pdb+'_'+str(mol+1)+'.pdb')
+            coord=pP.pdbParser(pdblines,pdb,mer,altloc,[pdblist[pdb][1][mol]])
+            coord=cp.getca(coord,altloc,[pdblist[pdb][1][mol]])
+            wp.writeca(coord,cwd+'/'+pdb+'_'+str(mol+1)+'.pdb')
             for ch in pdblist[pdb][1][mol]:
-                ca=getca(coord,altloc,ch)
+                ca=cp.getca(coord,altloc,ch)
                 seq,map=a.getseq(ca)
                 outseq.write('>'+pdb+'_'+str(mol+1)+'.pdb'+'|'+ch+'|'+'\n'+seq+'\n')
                 code,name,nr=zip(*map)
@@ -96,7 +101,8 @@ def downloadPDB(pdblist,mer,altloc,refseq,query,cwd):
     outresmap.close()
 
 def msa(seqfile,resmap,query,cwd,clustalopath,merinfo,totmer):
-    outfile=cwd+'/'+query+'_msa.aln.fasta'
+    outfile=cwd+'/'+info.alnfasta
+    #wd+'/'+query+'_msa.aln.fasta'
     seqfile=cwd+'/'+seqfile
     complete,resids=a.msa_clustal(seqfile,resmap,outfile,clustalopath,cwd,merinfo,query,totmer)
     altloc='A'
@@ -108,7 +114,7 @@ def msa(seqfile,resmap,query,cwd,clustalopath,merinfo,totmer):
         except IOError:
             print pdb+' skipped'
             continue
-        ca=pdbParser(pdblines,pdb,totmer,altloc,[chains])
+        ca=pP.pdbParser(pdblines,pdb,totmer,altloc,[chains])
         newca=None
         for ch in chains:
             nter,cter=resids[pdb+'|'+ch+'|']
@@ -116,7 +122,7 @@ def msa(seqfile,resmap,query,cwd,clustalopath,merinfo,totmer):
                 newca=ca[(ca['ch']==ch)&(ca['resnr']>=nter) & (ca['resnr']<=cter)]
             else:
                 newca=np.concatenate([newca,ca[(ca['ch']==ch)&(ca['resnr']>=nter) & (ca['resnr']<=cter)]])
-        writeca(ca,cwd+'/'+'correct_'+pdb)
+        wp.writeca(ca,cwd+'/'+'correct_'+pdb)
         os.remove(cwd+'/'+pdb)
 
 
