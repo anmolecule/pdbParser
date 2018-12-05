@@ -1,0 +1,13 @@
+Metadata-Version: 1.1
+Name: pdbParser
+Version: 1.0
+Summary: Python package for preparing ensembles for eBDIMs projections
+Home-page: https://github.com/ozyo/pdbParser
+Author: Ozge Yoluk
+Author-email: ozgeyoluk@proteinart.net
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 2.7
+Classifier: LICENSE :: OSI APPROVED :: GNU GENERAL PUBLIC LICENSE V3 (GPLV3)
+Classifier: Operating System :: OS Independent

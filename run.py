@@ -29,25 +29,36 @@ parser.set_defaults(cwd=getcwd())
 parser.add_argument('--altloc', dest='altloc', help='Alternative location to be extracted, default is A')
 parser.set_defaults(altloc='A')
 parser.add_argument('--prepENS',dest='query',metavar='Uniport ID',nargs=1 ,help='This argument accepts a Uniprot ID, and returns the PDB Files that are complete. PDB IDs with missing residues are written with the flat broken_ . When this argument is given, all the other arguments except for multimeric.')
+parser.add_argument('--exclude',dest='exclude',metavar='PDB IDs to skip',help='Provide a list of PDBs to skip: in the form of ID1A,ID1B,...')
 parser.set_defaults('prepENS'=None)
+parser.set_defaults('exclude'=None)
 
 args=parser.parse_args()
 try:
     sid=args.start[0]
     eid=args.target[0]
 except TypeError:
-    parser.print_help()
-    exit()
-
+    if args.prepENS is None:
+        parser.print_help()
+        exit()
+    else:
+        pass
 logging.info('Output directory is %s.\n\t If the input files are not given with full path, current working directory is used to search.' %args.cwd)
 
 #Below does the prepENS and then exits. So the rest of the commands are ignored.
-if args.query is not None:
-    info=pE.PDBInfo(args.query,args.mer)
+if args.prepENS is not None and args.mer is not None:
+    if args.exclude is not None:
+        exclude=args.exclude.split()
+    else:
+        exclude=None
+    info=pE.PDBInfo(args.prepENS,args.mer,exclude)
     pE.downloadPDB(info,args.cwd)
     clustal=args.clustal
-    pE.msa(info,cwd,clustalopath)
-    pE.getcore(info)
+    pE.msa(info,cwd,clustal)
+    pE.getcore(info,cwd)
+    exit()
+else:
+    parser.print_help()
     exit()
 
 def chlistsplit(chlist):
