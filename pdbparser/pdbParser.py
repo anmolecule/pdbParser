@@ -6,12 +6,12 @@ import missing, writepdb
 import logging
 
 def pdbTitle(pdb):
+    titles=[]
     for line in pdb:
         if 'TITLE' in line:
-            title=line.split()
-            break
-    for i in title:
-        if 'CHIMERA' in title or 'FUSED' in title:
+            titles.append(line)
+    for i in titles:
+        if 'CHIMERA' in i or 'FUSED' in i:
             return True 
         else:
             return False

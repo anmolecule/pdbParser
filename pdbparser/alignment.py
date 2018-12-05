@@ -55,7 +55,7 @@ def findinsertions(aca):
     lastelem=len(subaca) - 1
     while lastelem>=0:
         if subaca[lastelem]!='-':
-            end=lastelem
+            end=lastelem+start
             break
         lastelem=lastelem-1
     insertions=[]
@@ -89,10 +89,12 @@ def findtergap(aca,insertions):
             if aca[i]=='-':
                 broken=True
                 break
-    if broken is True or insertion is True:
+    if broken is True:
+        return None,None
+    if insertion is True:
         return None,None
     else:
-        return start,end+1
+        return start,end
 
 def getaligned(ca1,ca2):
     sca1,mapca1=getseq(ca1)
@@ -157,17 +159,23 @@ def findresid(shifts,nter,cter,resmap):
         if len(pdb)>2:
             id,nr=pdb.split('\n')[0:2]
             if id in shifts.keys():
+                if len(shifts[id]) == 0:
+                    resid[id]=[None,None]
+                    continue
                 noffset=nter-shifts[id][0]
-                coffset=cter-nter
-                nrs=nr.split('-')[noffset:coffset]
-                resid[id]=[nrs[0],nrs[-1]]
+                coffset=cter-nter+noffset
+                nrs=nr.split('-')[noffset:coffset+1]
+                resid[id]=[int(nrs[0]),int(nrs[-1])]
     return(resid)
 
-def msa_clustal(infile,resmap,outfile,clustalopath,cwd,merinfo,query,totmer):
+def msa_clustal(infile,resmap,outfile,clustalopath,cwd,merinfo,query,totmer,alnf=None):
     resmap=cwd+'/'+resmap
-    clustalomega_cline = ClustalOmegaCommandline(infile=infile, outfile=outfile, verbose=False, auto=True, force=True)
-    clustalomega_cline()
-    msa=AlignIO.read(outfile, "fasta")
+    if alnf is None:
+        clustalomega_cline = ClustalOmegaCommandline(infile=infile, outfile=outfile, verbose=False, auto=True, force=True)
+        clustalomega_cline()
+        msa=AlignIO.read(outfile, "fasta")
+    else:
+        msa=AlignIO.read(cwd+'/'+alnf, "fasta")
     broken=[]
     nter=0
     cter=msa.get_alignment_length()
@@ -182,17 +190,17 @@ def msa_clustal(infile,resmap,outfile,clustalopath,cwd,merinfo,query,totmer):
         aln=str(record.seq)
         start,end=findtergap(aln,insertions)
         if start is None and end is None:
-            broken.append(record.id)
+            broken.append(record.id.split('|')[0])
+            shifts[record.id]=[]
             logging.critical('%s contains insertions or missing residues, skipping this chain and the assembly it belongs to.' %record.id)
             continue
         else:
-            nshift,cshift=findgap(aln)
-            shifts[record.id]=[nshift,cshift]
+            shifts[record.id]=[start,end]
             if start > nter:
                 nter=start
             if end < cter:
                 cter=end
-    core=msa[:,nter:cter]
+    core=msa[:,nter:cter+1]
     resid=findresid(shifts,nter,cter,resmap)
     completemers={}
     fullids=list(set([key.split('|')[0] for key in resid.keys()]))
@@ -202,13 +210,9 @@ def msa_clustal(infile,resmap,outfile,clustalopath,cwd,merinfo,query,totmer):
         merinfo[pdbid]
         for ch in merinfo[pdbid][1][int(mer)-1]:
             if pdb+'|'+ch+'|' in broken:
-                try:
-                    os.rename(cwd+pdb+'_'+str(mer)+'.pdb',cwd+'broken_'+pdb+'_'+str(mer)+'.pdb')
-                except (OSError, IOError):
-                    continue
+                continue
             else:
                 amer.append(ch)
-        if len(amer) == totmer:
-            completemers[pdb]=amer
+        completemers[pdb]=amer
     AlignIO.write(core,cwd+'/'+query+'_core.fasta',format='fasta')
-    return(completemers,resid)
+    return(completemers,resid,list(set(broken)))
