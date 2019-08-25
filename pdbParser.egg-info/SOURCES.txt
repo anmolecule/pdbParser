@@ -14,3 +14,12 @@ pdbParser.egg-info/SOURCES.txt
 pdbParser.egg-info/dependency_links.txt
 pdbParser.egg-info/requires.txt
 pdbParser.egg-info/top_level.txt
+pdbparser/__init__.py
+pdbparser/alignment.py
+pdbparser/clean_pdb.py
+pdbparser/divide_mer.py
+pdbparser/missing.py
+pdbparser/pdbParser.py
+pdbparser/prepENS.py
+pdbparser/readpdb.py
+pdbparser/writepdb.py

@@ -3,12 +3,10 @@ import logging
 import urllib
 import sys,os
 import numpy as np
-import pdbParser as pP
-import writepdb as wp
-import clean_pdb as cp
-import alignment as a
-reload (a)
-reload(pP)
+from pdbParser import pdbParser as pP
+from pdbParser import writepdb as wp
+from pdbParser import clean_pdb as cp
+from pdbParser import alignment as a
 
 class PDBInfo():
     def __init__(self,query,mer,exclude=None):
@@ -31,12 +29,18 @@ class PDBInfo():
             'format': 'tab',
             'columns': 'database(PDB),sequence'
         }
+        idparam=urllib.parse.urlencode(idparam)
+        result1 = urllib.request.Request(URLbase+'?'+idparam)
+        try:
+            result1=urllib.request.urlopen(result1).readlines()[1]
+        except:
+            logging.error('Cannot retrive the information for query number %s' %(self.query))
+            return(None,None)
 
-        result1 = requests.get(URLbase,params=idparam).text
         if len(result1) > 0:
-            pdbids,refseq=result1.split('\n')[1].split('\t')
+            pdbids,refseq=result1.split(b'\t')
             refseq=str(refseq)
-            pdbids=['{}'.format(i) for i in pdbids.split(';') if len(i)>1]
+            pdbids=['{}'.format(i.decode('utf-8')) for i in pdbids.split(b';') if len(i)>1]
 
             if self.exclude is not None:
                 try:
@@ -46,25 +50,34 @@ class PDBInfo():
                 except KeyError:
                     logging.warning('Did not find the PDB ID %s' %ex)
 
-            chainids={z.split(';')[1].strip():z.split(';')[4].split('=')[0].strip() for z in [i for i in urllib.urlopen(URLbase+self.query+'.txt').readlines() if i.startswith('DR   PDB;')] if z.split()[3] not in ['NMR;','model;']}
-        else:
-            logging.critical('Cannot retrive the information for query number %s' %(self.query))
-            return(None,None)
+            chainids={}
+            for i in urllib.request.urlopen(URLbase+self.query+'.txt').readlines():
+                if i.startswith (b'DR   PDB;') and i.split(b';')[3] not in ['NMR;','model;']:
+                    chainids[i.split(b';')[1].strip().decode('utf-8')]=i.split(b';')[4].split(b'=')[0].strip().decode('utf-8')
+        print(pdbids)
+        print(chainids)
         returninfo={}
-        for pdb in pdbids:
+        tmpids=[*pdbids]
+        for pdb in tmpids:
+            count=0
             try:
-                count=0
-                try:
-                    chains=chainids[pdb].split('/')
-                except AttributeError:
-                    continue
+                chains=chainids[pdb]
+            except KeyError:
+                logging.warning('PDB ID %s is either an NMR structure or a model. Skipping' %pdb)
+                pdbids.remove(pdb)
+                continue
+            try:
+                chains=chains.split('/')
+            except AttributeError:
+                continue
+            else:
                 nchain=len(chains)
                 if nchain == self.mer:
                     returninfo[pdb]=[count+1,[chains]]
                 elif nchain > self.mer:
                     if nchain % self.mer == 0:
                         newchains=[]
-                        for chnr in xrange(0,nchain,self.mer):
+                        for chnr in range(0,nchain,self.mer):
                             newchains.append(chains[chnr:chnr+self.mer])
                             count=count+1
                         returninfo[pdb]=[count,newchains]
@@ -76,9 +89,8 @@ class PDBInfo():
                     logging.critical('Cannot process PDB id %s. It does not contain complete set' %pdb)
                     chainids.pop(pdb)
                     pdbids.remove(pdb)
-            except KeyError:
-                logging.warning('PDB ID %s is either an NMR structure or a model. Skipping' %pdb)
-                pdbids.remove(pdb)
+        if len(returninfo) == 0:
+            return(None,None)
         return(returninfo,refseq)
 
 
@@ -92,7 +104,7 @@ def downloadPDB(info,cwd):
     outresmap=open(cwd+'/'+info.residmapfilename,'w')
     outseq.write('>refseq'+'\n'+refseq+'\n')
     for pdb in pdblist.keys():
-        urllib.urlretrieve('http://files.rcsb.org/download/%s.pdb' %pdb, cwd+'/'+pdb+'.pdb')
+        urllib.request.urlretrieve('http://files.rcsb.org/download/%s.pdb' %pdb, cwd+'/'+pdb+'.pdb')
         #time.sleep(-1)
         for mol in range(0,pdblist[pdb][0]):
             pdblines=open(cwd+'/'+pdb+'.pdb').readlines()

@@ -1,8 +1,7 @@
 #See COPYING for license 
 
-from urllib2 import urlopen
-import readpdb, clean_pdb, divide_mer
-import missing, writepdb
+from urllib.request import urlopen 
+from pdbParser import readpdb, clean_pdb, divide_mer, missing, writepdb
 import logging
 
 def pdbTitle(pdb):

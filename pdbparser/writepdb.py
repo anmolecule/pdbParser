@@ -3,4 +3,8 @@
 import numpy as np
 
 def writeca(div,file):
-    np.savetxt(file,div,fmt='ATOM  %5s  %2s %1s%3s %1s%4s%1s   %8s%8s%8s%6s%6s          %-2s%2s',delimiter='')
+    with open(file) as fout:
+        for d in div:
+            print(d)
+            atnr,atnam,resname,resnr,x,y,z,segname=d
+            fout.write("{:6s}{:5d} {:^4s}{:4s}  {:4d}    {:8.3f}{:8.3f}{:8.3f}{:6.2f}{:6.2f}          {:4s}\n".format('ATOM',atnr,atnam,resname,resnr,x,y,z,0.0,0.0,segname))

@@ -28,10 +28,12 @@ parser.add_argument('--dir', dest='cwd', help='The directory to save the output 
 parser.set_defaults(cwd=getcwd())
 parser.add_argument('--altloc', dest='altloc', help='Alternative location to be extracted, default is A')
 parser.set_defaults(altloc='A')
-parser.add_argument('--prepENS',dest='query',metavar='Uniport ID',nargs=1 ,help='This argument accepts a Uniprot ID, and returns the PDB Files that are complete. PDB IDs with missing residues are written with the flat broken_ . When this argument is given, all the other arguments except for multimeric.')
+parser.add_argument('--prepENS',dest='prepENS',metavar='Uniport ID',nargs=1 ,help='This argument accepts a Uniprot ID, and returns the PDB Files that are complete. PDB IDs with missing residues are written with the flat broken_ . When this argument is given, all the other arguments except for multimeric is not used.')
 parser.add_argument('--exclude',dest='exclude',metavar='PDB IDs to skip',help='Provide a list of PDBs to skip: in the form of ID1A,ID1B,...')
-parser.set_defaults('prepENS'=None)
-parser.set_defaults('exclude'=None)
+parser.add_argument('--clustal',dest='clustal',metavar='Path to clustal program')
+parser.set_defaults(clustal=None)
+parser.set_defaults(prepENS=None)
+parser.set_defaults(exclude=None)
 
 args=parser.parse_args()
 try:
@@ -51,11 +53,14 @@ if args.prepENS is not None and args.mer is not None:
         exclude=args.exclude.split()
     else:
         exclude=None
-    info=pE.PDBInfo(args.prepENS,args.mer,exclude)
-    pE.downloadPDB(info,args.cwd)
-    clustal=args.clustal
-    pE.msa(info,cwd,clustal)
-    pE.getcore(info,cwd)
+    info=pE.PDBInfo(args.prepENS[0],args.mer,exclude)
+    if info.result:
+        pE.downloadPDB(info,args.cwd)
+        clustal=args.clustal
+        pE.msa(info,args.cwd,clustal)
+        pE.getcore(info,args.cwd)
+    else:
+        logging.error('No structure is available')
     exit()
 else:
     parser.print_help()

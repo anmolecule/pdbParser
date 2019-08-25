@@ -3,16 +3,16 @@
 
 #We need to read quite a bit of information from the REMARKS lines. So it is better to keep them in a seperate module.
 import numpy as np
-import urllib2 
+import urllib
 import logging
 
 def getpdb(pdbid):
     if len(pdbid) == 4:
         try:
-            urlib2.urlretrieve('http://files.rcsb.org/download/%s.pdb' %pdbid, pdbid+'.pdb')
+            urlib.urlretrieve('http://files.rcsb.org/download/%s.pdb' %pdbid, pdbid+'.pdb')
             pdblines=open(pdbid+'.pdb','r').readlines()
             return pdblines
-        except urllib2.HTTPError as err:
+        except urllib.HTTPError as err:
             if err.code == 404:
                 logging.critical('PDB code not found')
             else:
